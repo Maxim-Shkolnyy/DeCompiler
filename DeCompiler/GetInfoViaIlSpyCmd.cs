@@ -7,11 +7,13 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace DeCompiler
 {
     public static class GetInfoViaIlSpyCmd
     {
+        private static int attempts = 0;
         public static void ProcessAssemblies(string assemblyFile, string assembliesFolder)
         {
             try
@@ -43,8 +45,13 @@ namespace DeCompiler
             }
             catch (UnauthorizedAccessException ex)
             {
+                attempts++;
                 Console.WriteLine($"Access to the path '{assemblyFile}' is denied: {ex.Message}");
                 AddAccessPremission(assemblyFile);
+                if (attempts < 3)
+                {
+                    ProcessAssemblies(assemblyFile, assembliesFolder);
+                }
             }
             catch (Exception ex)
             {
@@ -82,8 +89,42 @@ namespace DeCompiler
             }
         }
 
-        // Add this method to the GetInfoViaIlSpyCmd class
         public static void AddAccessPremission(string filePath)
+        {
+            using (var process = new Process())
+            {
+                process.StartInfo = new ProcessStartInfo
+                {
+                    FileName = "powershell",
+                    Arguments = $"-Command \"if ((Get-ExecutionPolicy) -eq 'Restricted') {{ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force }}; " +
+                                $"$acl = Get-Acl '{filePath}'; " +
+                                "$rule = New-Object System.Security.AccessControl.FileSystemAccessRule('Everyone', 'FullControl', 'Allow'); " +
+                                "$acl.SetAccessRule($rule); " +
+                                $"Set-Acl '{filePath}' $acl\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                process.Start();
+
+                string output = process.StandardOutput.ReadToEnd();
+                string error = process.StandardError.ReadToEnd();
+
+                process.WaitForExit();
+
+                if (process.ExitCode != 0)
+                {
+                    throw new Exception($"Failed to set access permissions: {error}");
+                }
+
+                Console.WriteLine(output);
+            }
+        }
+
+
+        public static void AddAccessPremissionViaSecurityIdentifier(string filePath)
         {
             FileInfo fileInfo = new FileInfo(filePath);
             System.Security.AccessControl.FileSecurity fileSecurity = fileInfo.GetAccessControl();
