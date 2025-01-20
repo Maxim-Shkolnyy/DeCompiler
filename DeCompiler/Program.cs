@@ -16,11 +16,14 @@ namespace DeCompiler
         {
             string assemblyFile = "D:\\Work\\fire\\Bin\\Compiler\\Elements.dll";
 
-            string assembliesFolder = "D:\\Work\\fire\\Bin\\Compiler";
+            string assembliesFolder = "";
+            //string assembliesFolder = "D:\\Work\\fire\\Bin\\Compiler";
 
+            ExecutePowerShellScript.ExecuteScript(assemblyFile);
 
-            GetInfoViaIlSpyCmd.ProcessAssemblies(assemblyFile, assembliesFolder);
+            //DecompileViaCSharpAndCmd.Decompile(assemblyFile, assembliesFolder, "C#");
 
+            //GetInfoViaIlSpyCmd.ProcessAssemblies(assemblyFile, assembliesFolder);
             //ProcessAssembly(assemblyFile);
         }
 
