@@ -339,7 +339,7 @@ namespace DeCompiler
     //                using (var fileStream = File.Open(file, FileMode.Open, FileAccess.Read, FileShare.Read))
     //                {
     //                    Console.WriteLine($"Processing: {file}");
-    //                    string assemblyInfo = GetAssemblyInfo(file);
+    //                    string assemblyInfo = GetAssemblyInfoViaCmd(file);
     //                    Console.WriteLine(assemblyInfo);
     //                }
     //            }
@@ -354,7 +354,7 @@ namespace DeCompiler
     //        }
     //    }
 
-    //    public static string GetAssemblyInfo(string filePath)
+    //    public static string GetAssemblyInfoViaCmd(string filePath)
     //    {
     //        using (var process = new Process())
     //        {

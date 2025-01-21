@@ -1,8 +1,12 @@
-﻿using System;
+﻿using ICSharpCode.Decompiler.CSharp;
+using ICSharpCode.Decompiler.Metadata;
+using ICSharpCode.Decompiler;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
@@ -37,6 +41,8 @@ namespace DeCompiler
                     {
                         Console.WriteLine($"Processing: {file}");
                         string assemblyInfo = GetAssemblyInfo(file);
+                        //string assemblyInfo = GetAssemblyInfoViaCmd(file);
+
                         foreach (var line in assemblyInfo.Split(new[] { Environment.NewLine }, StringSplitOptions.None))
                         {
                             Console.WriteLine(line);
@@ -49,7 +55,14 @@ namespace DeCompiler
             {
                 attempts++;
                 Console.WriteLine($"Access to the path '{assemblyFile}' is denied: {ex.Message}");
-                AddAccessPremission(assemblyFile);
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    AddAccessPremissionViaSecurityIdentifier(assemblyFile);
+                }
+                else
+                {
+                    AddAccessPremissionViaCmd(assemblyFile);
+                }
                 if (attempts < 3)
                 {
                     ProcessAssemblies(assemblyFile, assembliesFolder);
@@ -61,7 +74,44 @@ namespace DeCompiler
             }
         }
 
+
         public static string GetAssemblyInfo(string filePath)
+        {
+            try
+            {
+                var module = new PEFile(filePath);
+                var decompiler = new CSharpDecompiler(filePath, new DecompilerSettings());
+                var syntaxTree = decompiler.DecompileWholeModuleAsSingleFile();
+                return syntaxTree.ToString();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to decompile assembly: {ex.Message}");
+            }
+        }
+
+
+        
+
+        public static void AddAccessPremissionViaSecurityIdentifier(string filePath)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                FileInfo fileInfo = new FileInfo(filePath);
+                System.Security.AccessControl.FileSecurity fileSecurity = fileInfo.GetAccessControl();
+                System.Security.Principal.SecurityIdentifier everyone = new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.WorldSid, null);
+                fileSecurity.AddAccessRule(new System.Security.AccessControl.FileSystemAccessRule(everyone, System.Security.AccessControl.FileSystemRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
+                fileInfo.SetAccessControl(fileSecurity);
+            }
+            else
+            {
+                throw new PlatformNotSupportedException("This method is only supported on Windows.");
+            }
+        }
+
+
+
+        public static string GetAssemblyInfoViaCmd(string filePath)
         {
             using (var process = new Process())
             {
@@ -91,18 +141,14 @@ namespace DeCompiler
             }
         }
 
-        public static void AddAccessPremission(string filePath)
+        public static void AddAccessPremissionViaCmd(string filePath)
         {
             using (var process = new Process())
             {
                 process.StartInfo = new ProcessStartInfo
                 {
-                    FileName = "powershell",
-                    Arguments = $"-Command \"if ((Get-ExecutionPolicy) -eq 'Restricted') {{ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force }}; " +
-                                $"$acl = Get-Acl '{filePath}'; " +
-                                "$rule = New-Object System.Security.AccessControl.FileSystemAccessRule('Everyone', 'FullControl', 'Allow'); " +
-                                "$acl.SetAccessRule($rule); " +
-                                $"Set-Acl '{filePath}' $acl\"",
+                    FileName = "chmod",
+                    Arguments = $"777 \"{filePath}\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -123,15 +169,6 @@ namespace DeCompiler
 
                 Console.WriteLine(output);
             }
-        }
-
-        public static void AddAccessPremissionViaSecurityIdentifier(string filePath)
-        {
-            FileInfo fileInfo = new FileInfo(filePath);
-            System.Security.AccessControl.FileSecurity fileSecurity = fileInfo.GetAccessControl();
-            SecurityIdentifier everyone = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
-            fileSecurity.AddAccessRule(new FileSystemAccessRule(everyone, FileSystemRights.FullControl, AccessControlType.Allow));
-            fileInfo.SetAccessControl(fileSecurity);
         }
     }
 }
