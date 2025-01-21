@@ -14,7 +14,7 @@ namespace DeCompiler
     {
         public static void ExecuteScript(string targetPath)
         {
-            string scriptFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ProcessAssembly.ps1");
+            string scriptFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\ProcessAssembly.ps1").Replace("\\", "/");
 
             string powerShellPath = Environment.ExpandEnvironmentVariables(@"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe");
 
@@ -47,3 +47,5 @@ namespace DeCompiler
                 Console.WriteLine(errors);
             }
         }
+    }
+}

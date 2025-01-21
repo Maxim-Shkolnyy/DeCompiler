@@ -11,26 +11,24 @@ using static System.Formats.Asn1.AsnWriter;
 
 namespace DeCompiler
 {
-    public static class GetInfoViaIlSpyCmd
+    public static class GetInfoViaIlSpy
     {
         private static int attempts = 0;
         public static void ProcessAssemblies(string assemblyFile, string assembliesFolder)
         {
             try
             {
-                IEnumerable<string> files;
+                List<string> files = new List<string>();
 
-                if (string.IsNullOrEmpty(assembliesFolder))
+                if (string.IsNullOrEmpty(assemblyFile))
                 {
-                    // Process all files in the directory
-                    files = Directory.GetFiles(assemblyFile, "*.*", SearchOption.TopDirectoryOnly)
+                    files = Directory.GetFiles(assembliesFolder, "*.*", SearchOption.TopDirectoryOnly)
                                      .Where(file => file.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) ||
-                                                    file.EndsWith(".exe", StringComparison.OrdinalIgnoreCase));
+                                                    file.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)).ToList();
                 }
                 else
                 {
-                    // Process the specific file
-                    files = new List<string> { assembliesFolder };
+                    files.Add(assemblyFile);
                 }
 
                 foreach (var file in files)
@@ -39,7 +37,11 @@ namespace DeCompiler
                     {
                         Console.WriteLine($"Processing: {file}");
                         string assemblyInfo = GetAssemblyInfo(file);
-                        Console.WriteLine(assemblyInfo);
+                        foreach (var line in assemblyInfo.Split(new[] { Environment.NewLine }, StringSplitOptions.None))
+                        {
+                            Console.WriteLine(line);
+                        }
+                        Console.WriteLine($"____________________________________________________________________________________________DONE");
                     }
                 }
             }
@@ -65,7 +67,7 @@ namespace DeCompiler
             {
                 process.StartInfo = new ProcessStartInfo
                 {
-                    FileName = "ilspycmd", // Ensure ilspycmd is available in PATH
+                    FileName = "ilspycmd",
                     Arguments = $"\"{filePath}\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -122,7 +124,6 @@ namespace DeCompiler
                 Console.WriteLine(output);
             }
         }
-
 
         public static void AddAccessPremissionViaSecurityIdentifier(string filePath)
         {

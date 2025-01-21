@@ -15,15 +15,16 @@ namespace DeCompiler
         public static void Main(string[] args)
         {
             string assemblyFile = "D:\\Work\\fire\\Bin\\Compiler\\Elements.dll";
+            assemblyFile = "";
 
-            string assembliesFolder = "";
-            //string assembliesFolder = "D:\\Work\\fire\\Bin\\Compiler";
+            //string assembliesFolder = "";
+            string assembliesFolder = "D:\\Work\\old\\everwood5\\Bin\\555555";
 
-            ExecutePowerShellScript.ExecuteScript(assemblyFile);
+            //ExecutePowerShellScript.ExecuteScript(assemblyFile);
 
             //DecompileViaCSharpAndCmd.Decompile(assemblyFile, assembliesFolder, "C#");
 
-            //GetInfoViaIlSpyCmd.ProcessAssemblies(assemblyFile, assembliesFolder);
+            GetInfoViaIlSpy.ProcessAssemblies(assemblyFile, assembliesFolder);
             //ProcessAssembly(assemblyFile);
         }
 
@@ -312,7 +313,7 @@ namespace DeCompiler
             }
         }
     }
-    //public static class GetInfoViaIlSpyCmd
+    //public static class GetInfoViaIlSpy
     //{
     //    public static void ProcessAssemblies(string targetPath, string assemblyPath)
     //    {
